@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DemoAccessibility</string>
+    <string name="accessibility_service_description">Description</string>
+    <string name="accessibility">Accessibility</string>
+    <string name="usage_access">Usage access</string>
+    <string name="clean_cache">Clean cache</string>
+    <string name="check_app">Check all apps</string>
+</resources>
