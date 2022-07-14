@@ -5,4 +5,9 @@
     <string name="usage_access">Usage access</string>
     <string name="clean_cache">Clean cache</string>
     <string name="check_app">Check all apps</string>
+    <string translatable="false" name="text_clean_cache_finish">Clean cache was finished\nAccessibility can be disabled</string>
+    <string translatable="false" name="text_clean_cache_interrupt">Clean cache was interrupted\nAccessibility can be disabled</string>
+    <string name="clear_cache_btn_text">Clear cache</string>
+    <string name="storage_settings_for_app"><![CDATA[Storage &amp; cache]]></string>
+    <string name="storage_label">Storage</string>
 </resources>

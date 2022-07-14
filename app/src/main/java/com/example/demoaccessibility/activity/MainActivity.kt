@@ -19,12 +19,15 @@ import com.google.gson.Gson
 import com.orhanobut.hawk.Hawk
 import com.orhanobut.hawk.LogInterceptor
 import com.orhanobut.hawk.NoEncryption
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 import retrofit2.converter.gson.GsonConverterFactory
 
 
 class MainActivity : AppCompatActivity() {
-    private val button: Button by lazy { findViewById<Button>(R.id.button) }
-    private val button2: Button by lazy { findViewById<Button>(R.id.button2) }
+    private val btnAccess: Button by lazy { findViewById<Button>(R.id.button) }
+    private val btnUsage: Button by lazy { findViewById<Button>(R.id.button2) }
     private val button3: Button by lazy { findViewById<Button>(R.id.button3) }
     private var mList: MutableList<PackageInfo> = ArrayList()
 
@@ -35,12 +38,12 @@ class MainActivity : AppCompatActivity() {
 
         Hawk.init(this).build()
 
-        button.setOnClickListener {
+        btnAccess.setOnClickListener {
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
             startActivity(intent)
         }
-        button2.setOnClickListener {
+        btnUsage.setOnClickListener {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
             startActivity(intent)
@@ -48,10 +51,10 @@ class MainActivity : AppCompatActivity() {
         button3.setText(getString(R.string.clean_cache))
 
         button3.setOnClickListener {
-            buttonIntentClean()
+            CoroutineScope(IO).launch {
+                buttonIntentClean()
+            }
         }
-
-
     }
 
     private fun getListInstalledApps(systemOnly: Boolean, userOnly: Boolean): ArrayList<PackageInfo> {
@@ -71,7 +74,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getListInstalledUserApps(): ArrayList<PackageInfo> {
-        return getListInstalledApps(systemOnly = true, userOnly = true)
+        return getListInstalledApps(systemOnly = false, userOnly = true)
     }
 
     private fun getStorageStats(packageName: String): StorageStats? {
@@ -99,7 +102,7 @@ class MainActivity : AppCompatActivity() {
             getStorageStats(it.applicationInfo.packageName)?.let { it1 ->
                 ContentListPlaceHolder.addItem(
                     pkgInfo = it,
-                    label = it.applicationInfo.packageName,
+                    label = it.applicationInfo.loadLabel(packageManager).toString(),
                     icon = it.applicationInfo.loadIcon(packageManager),
                     checked = false,
                     stats = it1

@@ -8,8 +8,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.ConditionVariable
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,9 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.HashSet
 
 class ListActivity : AppCompatActivity() {
     private val rcvMain: RecyclerView by lazy { findViewById<RecyclerView>(R.id.rcvMain) }
@@ -92,28 +92,29 @@ class ListActivity : AppCompatActivity() {
                 checkedPkgList.remove(it.name)
             }
 
-            Hawk.put("listChecked",checkedPkgList)
+            Hawk.put("listChecked", checkedPkgList)
 
             CoroutineScope(IO).launch {
-                startCleanCache(ContentListPlaceHolder.itemList.filter { it.checked }.map { it.name })
+                startCleanCache(ContentListPlaceHolder.itemList.filter { it.checked }.map { it.label })
+
             }
+            checkedPkgList.addAll(Hawk.get("listChecked"))
         }
     }
 
-    //2
+    override fun onDestroy() {
+        LocalBroadcastManager.getInstance(this)
+            .sendBroadcast(Intent("disableSelf"))
+        super.onDestroy()
+    }
+
+    //1
     private suspend fun startCleanCache(pkgList: List<String>) {
         cleanCacheInterrupt.set(false)
         cleanCacheFinished.set(false)
 
         for (i in pkgList.indices) {
             startApplicationDetailsActivity(pkgList[i])
-            cleanAppCacheFinished.set(false)
-//            runOnUiThread {
-//                binding.textView.text = String.format(
-//                    Locale.getDefault(),
-//                    "%d / %d %s", i, pkgList.size,
-//                    getText(R.string.text_clean_cache_left))
-//            }
             delay(500L)
             waitAccessibility.block(5000L)
             delay(500L)
@@ -122,37 +123,40 @@ class ListActivity : AppCompatActivity() {
             if (cleanCacheInterrupt.get()) break
         }
         cleanCacheFinished.set(true)
-
         runOnUiThread {
-//            val displayText = if (cleanCacheInterrupt.get())
-//                getText(R.string.text_clean_cache_interrupt)
-//            else getText(R.string.text_clean_cache_finish)
-//            binding.textView.text = displayText
-//
-//            binding.btnCleanUserAppCache.isEnabled = true
-//            binding.btnCleanSystemAppCache.isEnabled = true
-//            binding.btnCleanAllAppCache.isEnabled = true
+            val displayText = if (cleanCacheInterrupt.get()) {
+                getText(R.string.text_clean_cache_interrupt)
+            } else {
+                getText(R.string.text_clean_cache_finish)
+            }
 
-            // return back to Main Activity, sometimes not possible press Back from Settings
-            if (pkgList.isNotEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            Log.e("abc0", "${displayText}")
+            if (pkgList.isNotEmpty() && Build.VERSION.SDK_INT <
+                Build.VERSION_CODES.P
+            ) {
                 val intent = this.intent
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                intent.putExtra(ARG_DISPLAY_TEXT, "displayText")
+
+                intent.putExtra(ARG_DISPLAY_TEXT, displayText)
                 startActivity(intent)
             }
         }
     }
 
-    //1
+    //2
     private fun startApplicationDetailsActivity(packageName: String) {
         try {
+            Log.e("packageName", "${packageName}")
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION)
+
             intent.data = Uri.parse("package:$packageName")
+
             startActivity(intent)
+
         } catch (e: ActivityNotFoundException) {
             e.printStackTrace()
         }

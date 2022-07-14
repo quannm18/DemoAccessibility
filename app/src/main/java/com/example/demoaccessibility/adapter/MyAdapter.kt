@@ -1,13 +1,18 @@
 package com.example.demoaccessibility.adapter
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.text.format.Formatter
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.demoaccessibility.R
 import com.example.demoaccessibility.viewmodel.PlaceholderPackage
@@ -31,6 +36,17 @@ class MyAdapter(val mList: MutableList<PlaceholderPackage>) : RecyclerView.Adapt
             }
             packageLabel.setOnCheckedChangeListener { _, checked ->
                 pkgInfo.checked = checked
+            }
+            itemView.setOnClickListener {
+                Log.e("packageName","${pkgInfo.name}")
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION)
+
+                intent.data = Uri.parse("package:${pkgInfo.name}")
+
+                itemView.context.startActivity(intent)
             }
         }
     }
